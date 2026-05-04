@@ -1,0 +1,26 @@
+RPAL's LEXICON:
+Identifier -> Letter (Letter | Digit | '_')* => '<IDENTIFIER>';
+Integer -> Digit+ => '<INTEGER>';
+Operator -> Operator_symbol+ => '<OPERATOR>';
+String -> ''''
+( '\' 't' | '\' 'n' | '\' '\' | '\' ''''
+| '(' | ')' | ';' | ','
+|''
+| Letter | Digit | Operator_symbol
+)* '''' => '<STRING>';
+Spaces -> ( ' ' | ht | Eol )+ => '<DELETE>';
+Comment -> '//'
+( '''' | '(' | ')' | ';' | ',' | '\' | ' '
+| ht | Letter | Digit | Operator_symbol
+)* Eol => '<DELETE>';
+Punction -> '(' => '('
+-> ')' => ')'
+-> ';' => ';'
+-> ',' => ',';
+Letter -> 'A'..'Z' | 'a'..'z';
+Digit -> '0'..'9';
+Operator_symbol
+-> '+' | '-' | '*' | '<' | '>' | '&' | '.'
+| '@' | '/' | ':' | '=' | '˜' | '|' | '$'
+| '!' | '#' | '%' | 'ˆ' | '_' | '[' | ']'
+| '{' | '}' | '"' | '‘' | '?';
