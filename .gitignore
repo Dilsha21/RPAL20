@@ -1,0 +1,17 @@
+# Compiled class files
+*.class
+bin/
+
+# Package output directories (created by javac -d .)
+lexer/
+parser/
+standardizer/
+cse/
+
+# Interim / working files
+Interim/
+
+# Test output files
+output.*.txt
+output.*
+*.test.out

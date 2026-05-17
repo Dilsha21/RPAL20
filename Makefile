@@ -1,40 +1,31 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# Makefile for RPAL Interpreter (CS 3513)
-# Usage:
-#   make            → compile everything
-#   make run FILE=rpal/fn1
-#                   → run interpreter on a test program
-#   make ast FILE=rpal/fn1
-#                   → print AST for a test program
-#   make st  FILE=rpal/fn1
-#                   → print Standardized Tree for a test program
-#   make clean      → remove compiled class files
-# ──────────────────────────────────────────────────────────────────────────────
-
 JC      = javac
 JVM     = java
 SRC     = src
-BIN     = bin
-FLAGS   = -d $(BIN) -sourcepath $(SRC)
 MAIN    = rpal20
+
+SOURCES = $(SRC)/$(MAIN).java \
+          $(SRC)/lexer/TokenType.java \
+          $(SRC)/lexer/Token.java \
+          $(SRC)/lexer/Lexer.java \
+          $(SRC)/parser/ASTNode.java \
+          $(SRC)/parser/Parser.java \
+          $(SRC)/standardizer/Standardizer.java \
+          $(SRC)/cse/Environment.java \
+          $(SRC)/cse/CSEMachine.java
 
 .PHONY: all run ast st clean
 
-# ── Build ─────────────────────────────────────────────────────────────────────
 all:
-	@mkdir -p $(BIN)
-	$(JC) $(FLAGS) $(SRC)/$(MAIN).java
+	$(JC) -d . -sourcepath $(SRC) $(SOURCES)
 
-# ── Run ───────────────────────────────────────────────────────────────────────
 run: all
-	$(JVM) -cp $(BIN) $(MAIN) $(FILE)
+	$(JVM) $(MAIN) $(FILE)
 
 ast: all
-	$(JVM) -cp $(BIN) $(MAIN) -ast $(FILE)
+	$(JVM) $(MAIN) -ast $(FILE)
 
 st: all
-	$(JVM) -cp $(BIN) $(MAIN) -st $(FILE)
+	$(JVM) $(MAIN) -st $(FILE)
 
-# ── Clean ─────────────────────────────────────────────────────────────────────
 clean:
-	rm -rf $(BIN)
+	rm -rf lexer parser standardizer cse $(MAIN).class

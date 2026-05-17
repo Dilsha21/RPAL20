@@ -144,13 +144,16 @@ public class CSEMachine {
      */
     public Object evaluate(ASTNode stRoot) {
         // Step 1: Flatten ST into control structures
-        deltas.add(new ArrayList<>());          // delta[0] is the entry delta
-        flattenST(stRoot, 0);
+        // delta[0] is a placeholder (unused); delta[1] is the entry point.
+        // This matches the reference rpal.exe numbering where user lambdas start at delta[2].
+        deltas.add(new ArrayList<>());          // delta[0] unused
+        deltas.add(new ArrayList<>());          // delta[1] is the entry delta
+        flattenST(stRoot, 1);
 
         // Step 2: Set up initial machine state
         currentEnv  = new Environment(null, 0); // e0: empty root environment
         envCounter  = 1;
-        control     = new ArrayList<>(deltas.get(0));
+        control     = new ArrayList<>(deltas.get(1));
         controlPointer = 0;
 
         // Push initial env marker (e0) onto the stack  (not strictly needed but
@@ -343,7 +346,7 @@ public class CSEMachine {
      */
     private void run() {
         // Convert control to a deque for O(1) pop-front
-        Deque<Object> ctrl = new ArrayDeque<>(deltas.get(0));
+        Deque<Object> ctrl = new ArrayDeque<>(deltas.get(1));
 
         while (!ctrl.isEmpty()) {
             Object token = ctrl.pollFirst();
@@ -674,14 +677,40 @@ public class CSEMachine {
      * Matches rpal.exe output format exactly.
      */
     static String rpalValueToString(Object v) {
-        if (v instanceof Integer)  return v.toString();
-        if (v instanceof Boolean)  return v.toString();
-        if (v instanceof String)   return (String) v;
-        if (v instanceof RpalTuple) return v.toString();
-        if (v instanceof Closure)  return "<closure>";
-        if (v instanceof EtaClosure) return "<closure>";
-        if (v == null)             return "nil";
+        if (v instanceof Integer)    return v.toString();
+        if (v instanceof Boolean)    return v.toString();
+        if (v instanceof String)     return (String) v;
+        if (v instanceof RpalTuple)  return v.toString();
+        if (v instanceof Closure) {
+            Closure c = (Closure) v;
+            return "[lambda closure: " + boundVarToString(c.lambda.boundVar)
+                    + ": " + c.lambda.deltaIndex + "]";
+        }
+        if (v instanceof EtaClosure) {
+            EtaClosure e = (EtaClosure) v;
+            return "[lambda closure: " + boundVarToString(e.closure.lambda.boundVar)
+                    + ": " + e.closure.lambda.deltaIndex + "]";
+        }
+        if (v == null)               return "nil";
         return v.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String boundVarToString(Object boundVar) {
+        if (boundVar instanceof NameToken) {
+            return ((NameToken) boundVar).name;
+        }
+        if (boundVar instanceof List) {
+            List<NameToken> names = (List<NameToken>) boundVar;
+            StringBuilder sb = new StringBuilder("(");
+            for (int i = 0; i < names.size(); i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(names.get(i).name);
+            }
+            sb.append(")");
+            return sb.toString();
+        }
+        return boundVar.toString();
     }
 
     /**
