@@ -3,10 +3,10 @@
 bin/
 
 # Package output directories (created by javac -d .)
-lexer/
-parser/
-standardizer/
-cse/
+/lexer/
+/parser/
+/standardizer/
+/cse/
 
 # Interim / working files
 Interim/
