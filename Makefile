@@ -11,17 +11,17 @@ endif
 .PHONY: all run ast st clean
 
 all:
-    @mkdir -p $(OUTDIR)
-    $(JC) -d $(OUTDIR) -sourcepath $(SRC) $(SOURCES)
+	@mkdir -p $(OUTDIR)
+	$(JC) -d $(OUTDIR) -sourcepath $(SRC) $(SOURCES)
 
 run: all
-    $(JVM) -cp $(OUTDIR) $(MAIN) $(FILE)
+	$(JVM) -cp $(OUTDIR) $(MAIN) $(FILE)
 
 ast: all
-    $(JVM) -cp $(OUTDIR) $(MAIN) -ast $(FILE)
+	$(JVM) -cp $(OUTDIR) $(MAIN) -ast $(FILE)
 
 st: all
-    $(JVM) -cp $(OUTDIR) $(MAIN) -st $(FILE)
+	$(JVM) -cp $(OUTDIR) $(MAIN) -st $(FILE)
 
 clean:
-    @rm -rf $(OUTDIR)
+	@rm -rf $(OUTDIR)
