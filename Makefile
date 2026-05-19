@@ -13,6 +13,7 @@ endif
 all:
 	@mkdir -p $(OUTDIR)
 	$(JC) -d $(OUTDIR) -sourcepath $(SRC) $(SOURCES)
+	@chmod +x rpal20 2>/dev/null || true
 
 run: all
 	$(JVM) -cp $(OUTDIR) $(MAIN) $(FILE)

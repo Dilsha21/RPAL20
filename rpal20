@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# Wrapper to run the Java RPAL main class using the project's bin directory.
+# Usage: ./rpal20 [args...]
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec java -cp "$SCRIPT_DIR/bin" rpal20 "$@"
