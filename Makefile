@@ -1,31 +1,27 @@
 JC      = javac
 JVM     = java
 SRC     = src
+OUTDIR  = bin
 MAIN    = rpal20
-
-SOURCES = $(SRC)/$(MAIN).java \
-          $(SRC)/lexer/TokenType.java \
-          $(SRC)/lexer/Token.java \
-          $(SRC)/lexer/Lexer.java \
-          $(SRC)/parser/ASTNode.java \
-          $(SRC)/parser/Parser.java \
-          $(SRC)/standardizer/Standardizer.java \
-          $(SRC)/cse/Environment.java \
-          $(SRC)/cse/CSEMachine.java
+SOURCES := $(shell find $(SRC) -name '*.java' 2>/dev/null)
+ifeq ($(strip $(SOURCES)),)
+SOURCES := $(shell git ls-files "$(SRC)/**/*.java" 2>/dev/null)
+endif
 
 .PHONY: all run ast st clean
 
 all:
-	$(JC) -d . -sourcepath $(SRC) $(SOURCES)
+    @mkdir -p $(OUTDIR)
+    $(JC) -d $(OUTDIR) -sourcepath $(SRC) $(SOURCES)
 
 run: all
-	$(JVM) $(MAIN) $(FILE)
+    $(JVM) -cp $(OUTDIR) $(MAIN) $(FILE)
 
 ast: all
-	$(JVM) $(MAIN) -ast $(FILE)
+    $(JVM) -cp $(OUTDIR) $(MAIN) -ast $(FILE)
 
 st: all
-	$(JVM) $(MAIN) -st $(FILE)
+    $(JVM) -cp $(OUTDIR) $(MAIN) -st $(FILE)
 
 clean:
-	rm -rf lexer parser standardizer cse $(MAIN).class
+    @rm -rf $(OUTDIR)
