@@ -6,25 +6,20 @@ import java.util.List;
 /**
  * Represents a single node in the Abstract Syntax Tree (AST)
  * and the Standardized Tree (ST) for the RPAL interpreter.
- *
- * Used by: Parser (builds it), Standardizer (rewrites it),
- *          CSE Machine (flattens it into control structures).
  */
 public class ASTNode {
 
-    // ─── Node type categories ─────────────────────────────────────────────────
     public enum NodeType {
         // Leaf node types (have a value, no children)
-        IDENTIFIER,     // variable names:  x, y, myFunc
-        INTEGER,        // integer literals: 0, 42, -1
-        STRING,         // string literals:  'hello'
-        BOOLEAN,        // true, false
-        NIL,            // nil  (empty list)
-        DUMMY,          // dummy (placeholder in CSE)
+        IDENTIFIER,     
+        INTEGER,        
+        STRING,         
+        BOOLEAN,        
+        NIL,           
+        DUMMY,          
 
-        // Internal / keyword node types (have children, no value)
-        LET,            // let D in E
-        LAMBDA,         // fn Vb+ . E  →  lambda after standardization
+        LET,            
+        LAMBDA,         
         WHERE,          // E where Dr
         TAU,            // tuple constructor (tau n)
         AUG,            // list augmentation  (aug)
@@ -51,28 +46,14 @@ public class ASTNode {
         UNKNOWN         // fallback — should never appear in a valid tree
     }
 
-    // ─── Fields ───────────────────────────────────────────────────────────────
 
-    /** Structural role of this node (e.g. LET, PLUS, IDENTIFIER). */
+    // Structural role of this node 
     public NodeType nodeType;
-
-    /**
-     * Raw string tag — matches the label printed by rpal.exe.
-     * Examples: "let", "+", "<ID:x>", "<INT:5>", "lambda"
-     */
     public String type;
-
-    /**
-     * Concrete value for leaf nodes only.
-     * Null for internal nodes.
-     * Examples: "x" for an identifier, "42" for an integer, "hello" for a string.
-     */
     public String value;
 
-    /** Ordered list of child nodes (left to right = first to last child). */
     private List<ASTNode> children;
 
-    // ─── Constructors ─────────────────────────────────────────────────────────
 
     /**
      * Internal node constructor (operator, keyword, structure).
@@ -86,9 +67,9 @@ public class ASTNode {
     }
 
     /**
-     * Leaf node constructor (identifier, literal).
-     * @param type   string label, e.g. "ID", "INT", "STR"
-     * @param value  the concrete value, e.g. "x", "42", "hello"
+     * Leaf node constructor.
+     * @param type   
+     * @param value  
      */
     public ASTNode(String type, String value) {
         this.type     = type;
@@ -97,44 +78,38 @@ public class ASTNode {
         this.children = new ArrayList<>();
     }
 
-    // ─── Child management ────────────────────────────────────────────────────
 
-    /** Append a child to the right (end) of the children list. */
+    //Append a child to the right (end) of the children list.
     public void addChild(ASTNode child) {
         children.add(child);
     }
 
-    /** Insert a child at a specific index (used during standardization rewrites). */
+    // Insert a child at a specific index.
     public void addChild(int index, ASTNode child) {
         children.add(index, child);
     }
 
-    /** Return the nth child (0-indexed). */
+    //Return the nth child (0-indexed).
     public ASTNode getChild(int index) {
         return children.get(index);
     }
 
-    /** Return all children. */
+    // Return all children.
     public List<ASTNode> getChildren() {
         return children;
     }
 
-    /** Number of children. */
+    // Number of children. 
     public int childCount() {
         return children.size();
     }
 
-    /** True if this node has no children — it is a leaf (literal or identifier). */
+    // True if this node has no children 
     public boolean isLeaf() {
         return children.isEmpty();
     }
 
-    // ─── Utility ─────────────────────────────────────────────────────────────
 
-    /**
-     * Deep-copy this node and its entire subtree.
-     * Needed by the standardizer when duplicating subtrees (e.g. rec rule).
-     */
     public ASTNode deepCopy() {
         ASTNode copy = new ASTNode(this.type, this.value);
         copy.nodeType = this.nodeType;
@@ -144,16 +119,9 @@ public class ASTNode {
         return copy;
     }
 
-    /**
-     * Print the AST in the indented format expected by rpal.exe.
-     * Call with depth=0 on the root to print the whole tree.
-     *
-     * Format:
-     *   let
-     *   ..<ID:x>
-     *   ..gamma
-     *   ....<ID:f>
-     */
+    
+     //Print the AST in the indented format.
+
     public void print(int depth) {
         System.out.println(".".repeat(depth) + toLabel());
         for (ASTNode child : children) {
@@ -161,25 +129,15 @@ public class ASTNode {
         }
     }
 
-    /**
-     * The printed label for this node — matches rpal.exe -ast output exactly.
-     *   Internal node  →  just the type string, e.g. "let", "+"
-     *   ID leaf        →  "<ID:x>"
-     *   INT leaf       →  "<INT:42>"
-     *   STR leaf       →  "<STR:'hello'>"
-     *   true/false     →  "<true>" / "<false>"
-     *   nil            →  "<nil>"
-     *   dummy          →  "<dummy>"
-     */
     public String toLabel() {
         switch (nodeType) {
             case IDENTIFIER: return "<ID:" + value + ">";
             case INTEGER:    return "<INT:" + value + ">";
             case STRING:     return "<STR:" + value + ">";
-            case BOOLEAN:    return "<" + value + ">";   // value is "true" or "false"
+            case BOOLEAN:    return "<" + value + ">";  
             case NIL:        return "<nil>";
             case DUMMY:      return "<dummy>";
-            default:         return type;                // internal node label
+            default:         return type;              
         }
     }
 
@@ -188,13 +146,7 @@ public class ASTNode {
         return toLabel() + " [" + childCount() + " children]";
     }
 
-    // ─── NodeType resolver ────────────────────────────────────────────────────
 
-    /**
-     * Map the raw string type tag to its NodeType enum value.
-     * Called once in the constructor so the rest of the code
-     * can switch on nodeType instead of comparing strings.
-     */
     private NodeType resolveNodeType(String type) {
         if (type == null) return NodeType.UNKNOWN;
         switch (type) {
