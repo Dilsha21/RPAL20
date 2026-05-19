@@ -5,35 +5,17 @@ import parser.ASTNode.NodeType;
 
 import java.util.*;
 
-/**
- * CSE (Control-Stack-Environment) Machine.
- *
- * Evaluates a Standardized Tree (ST) by:
- *   1. Flattening the ST into numbered control structures (deltas).
- *   2. Running the abstract machine:
- *        - Control structure (delta array)
- *        - Value stack
- *        - Environment chain
- *
- * After evaluation the final value on the stack is the program result.
- */
 public class CSEMachine {
 
-    // ─── Control-structure elements ───────────────────────────────────────────
+    // Control-structure elements 
 
-    /**
-     * A "name" token pushed onto the control — will be looked up in the env.
-     */
     static class NameToken {
         final String name;
         NameToken(String name) { this.name = name; }
         @Override public String toString() { return name; }
     }
 
-    /**
-     * A lambda token in the control structure.
-     * Holds the index of the delta it refers to and the bound variable(s).
-     */
+
     static class LambdaToken {
         final int    deltaIndex;    // which delta this lambda's body lives in
         final Object boundVar;      // NameToken (single) or List<NameToken> (tuple)
@@ -48,10 +30,6 @@ public class CSEMachine {
         }
     }
 
-    /**
-     * A closure = lambda token + the environment it was created in.
-     * Pushed onto the value stack when a lambda is "evaluated".
-     */
     static class Closure {
         final LambdaToken lambda;
         final Environment env;
@@ -64,28 +42,27 @@ public class CSEMachine {
         }
     }
 
-    /** Environment-exit marker placed on the control stack. */
+    //Environment-exit marker placed on the control stack. 
     static class EnvMarker {
         final int envIndex;
         EnvMarker(int envIndex) { this.envIndex = envIndex; }
     }
 
-    /** Beta (conditional) marker. */
+    //Beta (conditional) marker. 
     static class BetaToken {
         final int thenDelta;
         final int elseDelta;
         BetaToken(int t, int e) { thenDelta = t; elseDelta = e; }
     }
 
-    /** Tau (tuple constructor) marker — arity tells how many stack items to collect. */
+    //Tau (tuple constructor) marker — arity tells how many stack items to collect
     static class TauToken {
         final int arity;
         TauToken(int n) { arity = n; }
     }
 
-    /**
-     * An RPAL tuple value — an ordered list of RPAL values.
-     */
+    //An RPAL tuple value — an ordered list of RPAL values.
+     
     static class RpalTuple {
         final List<Object> elements;
         RpalTuple(List<Object> elements) { this.elements = new ArrayList<>(elements); }
@@ -100,40 +77,31 @@ public class CSEMachine {
         }
     }
 
-    /** Y* (Ystar) combinator token on the stack. */
+    //Y* (Ystar) combinator token on the stack. 
     static class YstarToken {
         @Override public String toString() { return "<Y*>"; }
     }
 
-    /**
-     * An eta-closure: the fixed-point expansion of a recursive closure.
-     * When applied, it expands to  gamma(closure, eta).
-     */
+    // An eta-closure: the fixed-point expansion of a recursive closure.
+  
+     
     static class EtaClosure {
         final Closure closure;
         EtaClosure(Closure c) { this.closure = c; }
         @Override public String toString() { return "<eta:" + closure.lambda.deltaIndex + ">"; }
     }
 
-    // ─── Fields ───────────────────────────────────────────────────────────────
+    //  Fields 
 
-    /** All control structures (deltas). delta[0] is the entry point. */
+
     private final List<List<Object>> deltas = new ArrayList<>();
-
-    /** The value stack. */
     private final Deque<Object> stack = new ArrayDeque<>();
-
-    /** The current control structure (list of tokens/nodes to process). */
     private List<Object> control;
     private int controlPointer;
-
-    /** Environment stack (chain). */
     private Environment currentEnv;
-
-    /** Counter used to assign unique IDs to environments (for debugging). */
     private int envCounter = 0;
 
-    // ─── Public API ───────────────────────────────────────────────────────────
+    // Public API 
 
     /**
      * Run the CSE machine on the given Standardized Tree.
@@ -143,60 +111,48 @@ public class CSEMachine {
      * @return        the RPAL value result
      */
     public Object evaluate(ASTNode stRoot) {
-        // Step 1: Flatten ST into control structures
-        // delta[0] is a placeholder (unused); delta[1] is the entry point.
-        // This matches the reference rpal.exe numbering where user lambdas start at delta[2].
         deltas.add(new ArrayList<>());          // delta[0] unused
         deltas.add(new ArrayList<>());          // delta[1] is the entry delta
         flattenST(stRoot, 1);
 
-        // Step 2: Set up initial machine state
+        // Set up initial machine state
         currentEnv  = new Environment(null, 0); // e0: empty root environment
         envCounter  = 1;
         control     = new ArrayList<>(deltas.get(1));
         controlPointer = 0;
 
-        // Push initial env marker (e0) onto the stack  (not strictly needed but
-        // keeps the machine symmetric)
+        // Push initial env marker (e0) onto the stack
         stack.push(currentEnv);
 
-        // Step 3: Run the machine
         run();
 
-        // Step 4: Return the top of the value stack
+        //Return the top of the value stack
         return stack.isEmpty() ? null : stack.peek();
     }
 
-    // ─── Phase 1: Flatten ST → deltas ────────────────────────────────────────
+    // Phase 1: Flatten ST → deltas 
 
-    /**
-     * Recursively walk the ST and populate delta[deltaIndex].
-     *
-     * Most nodes are pushed as-is (as primitives or NameTokens).
-     * Lambda and conditional nodes create new deltas.
-     */
     private void flattenST(ASTNode node, int deltaIndex) {
         List<Object> delta = deltas.get(deltaIndex);
 
         switch (node.nodeType) {
 
-            // ── Identifier → NameToken ──
+            //  Identifier → NameToken 
             case IDENTIFIER: {
                 delta.add(new NameToken(node.value));
                 break;
             }
 
-            // ── Literals → boxed Java values ──
+            // Literals → boxed Java values 
             case INTEGER: {
                 delta.add(Integer.parseInt(node.value));
                 break;
             }
             case STRING: {
-                // Strip surrounding single-quotes stored by the lexer
+             
                 String s = node.value;
                 if (s.startsWith("'") && s.endsWith("'"))
                     s = s.substring(1, s.length() - 1);
-                // Unescape RPAL escape sequences
                 s = unescapeRpal(s);
                 delta.add(s);
                 break;
@@ -214,24 +170,22 @@ public class CSEMachine {
                 break;
             }
 
-            // ── Lambda → create new delta, push LambdaToken ──
+            //  Lambda → create new delta, push LambdaToken 
             case LAMBDA: {
                 int newIdx = deltas.size();
                 deltas.add(new ArrayList<>());
 
-                // Bound variable(s): child 0 is param(s), child 1 is body
                 ASTNode paramNode = node.getChild(0);
                 Object  boundVar  = extractBoundVar(paramNode);
 
                 LambdaToken tok = new LambdaToken(newIdx, boundVar);
                 delta.add(tok);
 
-                // Flatten body into the new delta
                 flattenST(node.getChild(1), newIdx);
                 break;
             }
 
-            // ── Conditional (->)  →  beta + two new deltas ──
+            // Conditional (->)  →  beta + two new deltas 
             case CONDITIONAL: {
                 // children: condition, then-expr, else-expr
                 int thenIdx = deltas.size();   deltas.add(new ArrayList<>());
@@ -240,13 +194,12 @@ public class CSEMachine {
                 flattenST(node.getChild(1), thenIdx);
                 flattenST(node.getChild(2), elseIdx);
 
-                // Flatten condition into current delta, then push beta
                 flattenST(node.getChild(0), deltaIndex);
                 delta.add(new BetaToken(thenIdx, elseIdx));
                 break;
             }
 
-            // ── Tau → push TauToken after flattening all children ──
+            // Tau → push TauToken after flattening all children 
             case TAU: {
                 for (ASTNode child : node.getChildren()) {
                     flattenST(child, deltaIndex);
@@ -255,22 +208,21 @@ public class CSEMachine {
                 break;
             }
 
-            // ── Apply (gamma) → flatten both children, then gamma marker ──
+            //Apply (gamma) → flatten both children, then gamma marker 
             case APPLY: {
-                // For gamma, flatten operator then operand, push "gamma"
                 flattenST(node.getChild(1), deltaIndex);  // rand first
                 flattenST(node.getChild(0), deltaIndex);  // rator second
                 delta.add("gamma");
                 break;
             }
 
-            // ── Ystar ──
+            //  Ystar 
             case YSTAR: {
                 delta.add(new YstarToken());
                 break;
             }
 
-            // ── Binary/Unary operators ──
+            //  Binary/Unary operators 
             case PLUS: case MINUS: case MULTIPLY: case DIVIDE: case POWER:
             case EQ: case NE: case LT: case LE: case GT: case GE:
             case OR: case AND:
@@ -294,10 +246,8 @@ public class CSEMachine {
         }
     }
 
-    /**
-     * Extract the bound variable descriptor from a lambda's parameter node.
-     * Returns a NameToken for a single ID, or a List<NameToken> for a tuple binding.
-     */
+    // Extract the bound variable descriptor from a lambda's parameter node.
+
     private Object extractBoundVar(ASTNode paramNode) {
         if (paramNode.nodeType == NodeType.IDENTIFIER) {
             return new NameToken(paramNode.value);
@@ -310,11 +260,10 @@ public class CSEMachine {
             }
             return names;
         }
-        // Single identifier wrapped in some other node
         return new NameToken(paramNode.value);
     }
 
-    /** Map NodeType to a string operator token for the control structure. */
+    // Map NodeType to a string operator token for the control structure.
     private String opToken(NodeType t) {
         switch (t) {
             case PLUS:     return "+";
@@ -337,27 +286,21 @@ public class CSEMachine {
         }
     }
 
-    // ─── Phase 2: Run the CSE machine ─────────────────────────────────────────
+    //Phase 2: Run the CSE machine 
 
-    /**
-     * Main evaluation loop.
-     * Processes the current control list from left to right.
-     * The control list is managed as a Deque for efficient head-removal.
-     */
     private void run() {
-        // Convert control to a deque for O(1) pop-front
         Deque<Object> ctrl = new ArrayDeque<>(deltas.get(1));
 
         while (!ctrl.isEmpty()) {
             Object token = ctrl.pollFirst();
 
-            // ── Literals / values ──────────────────────────────────────────
+            //  Literals / values 
             if (token instanceof Integer || token instanceof Boolean
                     || token instanceof String && !isOperator(token)
                     || token instanceof RpalTuple) {
                 stack.push(token);
 
-            // ── NameToken → look up in environment ──────────────────────
+            //  NameToken → look up in environment 
             } else if (token instanceof NameToken) {
                 String name = ((NameToken) token).name;
                 Object val  = lookupBuiltin(name);
@@ -365,20 +308,20 @@ public class CSEMachine {
                 if (val == null) throw new RuntimeException("Unbound identifier: " + name);
                 stack.push(val);
 
-            // ── LambdaToken → create closure and push ────────────────────
+            //  LambdaToken → create closure and push 
             } else if (token instanceof LambdaToken) {
                 LambdaToken lam = (LambdaToken) token;
                 stack.push(new Closure(lam, currentEnv));
 
-            // ── YstarToken → push Ystar ──────────────────────────────────
+            //  YstarToken → push Ystar 
             } else if (token instanceof YstarToken) {
                 stack.push(new YstarToken());
 
-            // ── gamma → apply rator to rand ──────────────────────────────
+            //  gamma → apply rator to rand 
             } else if ("gamma".equals(token)) {
                 applyGamma(ctrl);
 
-            // ── TauToken → collect n items from stack into a tuple ───────
+            //  TauToken → collect n items from stack into a tuple ─
             } else if (token instanceof TauToken) {
                 int n = ((TauToken) token).arity;
                 List<Object> elems = new ArrayList<>(n);
@@ -386,7 +329,7 @@ public class CSEMachine {
                 Collections.reverse(elems);
                 stack.push(new RpalTuple(elems));
 
-            // ── BetaToken → conditional branch ───────────────────────────
+            //  BetaToken → conditional branch ─
             } else if (token instanceof BetaToken) {
                 BetaToken beta = (BetaToken) token;
                 Object cond = stack.pop();
@@ -399,7 +342,7 @@ public class CSEMachine {
                     ctrl.addFirst(chosen.get(i));
                 }
 
-            // ── EnvMarker → restore environment ──────────────────────────
+            //  EnvMarker → restore environment 
             } else if (token instanceof EnvMarker) {
                 // Pop value, pop env marker from stack, restore env
                 Object result = stack.pop();
@@ -413,7 +356,7 @@ public class CSEMachine {
                 }
                 stack.push(result);
 
-            // ── Unary operators ──────────────────────────────────────────
+            //  Unary operators 
             } else if ("neg".equals(token)) {
                 Object v = stack.pop();
                 stack.push(-toInt(v));
@@ -421,37 +364,33 @@ public class CSEMachine {
                 Object v = stack.pop();
                 stack.push(!toBool(v));
 
-            // ── Binary operators ─────────────────────────────────────────
+            //  Binary operators 
             } else if (isBinaryOp(token)) {
                 Object right = stack.pop();
                 Object left  = stack.pop();
                 stack.push(applyBinaryOp((String) token, left, right));
 
-            // ── aug ───────────────────────────────────────────────────────
+            //  aug 
             } else if ("aug".equals(token)) {
                 Object right = stack.pop();
                 Object left  = stack.pop();
                 stack.push(augTuple(left, right));
 
-            // ── Anything else: push as-is ─────────────────────────────────
+            //  Anything else: push as-is 
             } else {
                 stack.push(token);
             }
         }
     }
 
-    // ─── gamma application ────────────────────────────────────────────────────
-
-    /**
-     * Handle a gamma (function application).
-     * Pops rator then rand from the stack and applies.
-     */
+    //  gamma application 
+     
     @SuppressWarnings("unchecked")
     private void applyGamma(Deque<Object> ctrl) {
         Object rator = stack.pop();
         Object rand  = stack.pop();
 
-        // ── Closure application ──────────────────────────────────────────
+        //  Closure application 
         if (rator instanceof Closure) {
             Closure cls = (Closure) rator;
 
@@ -473,7 +412,7 @@ public class CSEMachine {
                 ctrl.addFirst(body.get(i));
             }
 
-        // ── Y* application → create eta-closure ──────────────────────────
+        //  Y* application → create eta-closure 
         } else if (rator instanceof YstarToken) {
             if (rand instanceof Closure) {
                 stack.push(new EtaClosure((Closure) rand));
@@ -481,29 +420,25 @@ public class CSEMachine {
                 throw new RuntimeException("Y* applied to non-closure: " + rand);
             }
 
-        // ── Eta-closure application → expand: eta @ rand = closure(eta) @ rand ──
+        //  Eta-closure application → expand: eta @ rand = closure(eta) @ rand 
         } else if (rator instanceof EtaClosure) {
             EtaClosure eta = (EtaClosure) rator;
-            // Correct Y* expansion:
-            //   eta @ rand  →  (closure @ eta) @ rand
-            // Push rand back, then closure, then eta, then two gammas
             stack.push(rand);   // will be consumed by outer gamma
             stack.push(eta);    // eta serves as argument to closure
             stack.push(eta.closure);
             ctrl.addFirst("gamma"); // outer: result @ rand
             ctrl.addFirst("gamma"); // inner: closure @ eta
 
-        // ── Built-in function application ───────────────────────────────
+        //  Built-in function application 
         } else if (rator instanceof String && ((String) rator).startsWith("Conc:")) {
-            // Second argument to the curried Conc function
-            String s1 = ((String) rator).substring(5);  // strip "Conc:" prefix
+            String s1 = ((String) rator).substring(5);  
             stack.push(s1 + (String) rand);
 
         } else if (rator instanceof String) {
             Object result = applyBuiltinFunction((String) rator, rand);
             stack.push(result);
 
-        // ── Tuple indexing: tuple @ integer ──────────────────────────────
+        //  Tuple indexing: tuple @ integer 
         } else if (rator instanceof RpalTuple) {
             int idx = toInt(rand) - 1;  // RPAL tuples are 1-indexed
             RpalTuple t = (RpalTuple) rator;
@@ -516,9 +451,7 @@ public class CSEMachine {
         }
     }
 
-    /**
-     * Bind formal parameters to actual arguments in newEnv.
-     */
+    //Bind formal parameters to actual arguments in newEnv.
     @SuppressWarnings("unchecked")
     private void bindParams(Object boundVar, Object rand, Environment newEnv) {
         if (boundVar instanceof NameToken) {
@@ -533,7 +466,7 @@ public class CSEMachine {
         }
     }
 
-    // ─── Operators ────────────────────────────────────────────────────────────
+    // Operators 
 
     private boolean isBinaryOp(Object token) {
         if (!(token instanceof String)) return false;
@@ -549,7 +482,7 @@ public class CSEMachine {
     private boolean isOperator(Object token) {
         if (!(token instanceof String)) return false;
         String s = (String) token;
-        if (s.startsWith("Conc:")) return false;  // partial Conc — treat as value
+        if (s.startsWith("Conc:")) return false;  
         return isBinaryOp(token) || "neg".equals(s) || "not".equals(s)
                 || "gamma".equals(s) || "aug".equals(s);
     }
@@ -589,12 +522,8 @@ public class CSEMachine {
         return new RpalTuple(elems);
     }
 
-    // ─── Built-in functions ───────────────────────────────────────────────────
+    // Built-in functions
 
-    /**
-     * Check if a name refers to a built-in function constant.
-     * Returns the built-in tag string, or null if it's not a built-in.
-     */
     private Object lookupBuiltin(String name) {
         switch (name) {
             case "Print": case "print":
@@ -609,9 +538,6 @@ public class CSEMachine {
         }
     }
 
-    /**
-     * Apply a built-in function to an argument.
-     */
     private Object applyBuiltinFunction(String name, Object arg) {
         switch (name) {
 
@@ -647,8 +573,6 @@ public class CSEMachine {
                 return s.substring(1);
             }
             case "Conc": {
-                // Conc is curried: Conc s1 → partial, then partial s2 → s1 ++ s2
-                // Return a tagged string so the second application can recognise it.
                 return "Conc:" + arg;
             }
 
@@ -661,7 +585,7 @@ public class CSEMachine {
         }
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+    // Helpers 
 
     private int toInt(Object v) {
         if (v instanceof Integer) return (Integer) v;
@@ -672,10 +596,8 @@ public class CSEMachine {
         throw new RuntimeException("Expected boolean, got: " + v);
     }
 
-    /**
-     * Convert an RPAL runtime value to its printable string representation.
-     * Matches rpal.exe output format exactly.
-     */
+    // Convert an RPAL runtime value to its printable string representation.
+     
     static String rpalValueToString(Object v) {
         if (v instanceof Integer)    return v.toString();
         if (v instanceof Boolean)    return v.toString();
@@ -713,9 +635,8 @@ public class CSEMachine {
         return boundVar.toString();
     }
 
-    /**
-     * Unescape RPAL string escape sequences.
-     */
+    //Unescape RPAL string escape sequences.
+     
     private String unescapeRpal(String s) {
         return s.replace("\\t", "\t")
                 .replace("\\n", "\n")
