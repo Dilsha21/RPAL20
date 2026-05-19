@@ -3,23 +3,18 @@ package cse;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * A single environment frame in the CSE Machine's environment chain.
- *
- * Environments form a linked list (chain) via the {@code parent} reference.
- * Lookup walks the chain until the binding is found or the root is reached.
- *
- * Corresponds to the "e" component of the CSE machine state.
- */
+// A single environment frame in the CSE Machine's environment chain.
+// Corresponds to the "e" component of the CSE machine state.
+
 public class Environment {
 
-    /** The parent (enclosing) environment frame. Null for the root (e0). */
+    //The parent (enclosing) environment frame. Null for the root (e0). 
     private final Environment parent;
 
-    /** Unique ID for debugging / env-marker matching. */
+    //Unique ID for debugging or env-marker matching. 
     final int id;
 
-    /** Bindings in this frame: variable name → RPAL value. */
+    //Bindings in this frame: variable name → RPAL value. 
     private final Map<String, Object> bindings = new HashMap<>();
 
     /**

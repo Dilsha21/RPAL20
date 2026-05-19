@@ -2,16 +2,10 @@ package lexer;
 
 import java.util.List;
 
-/**
- * LexerTest.java  —  Unit tests for the RPAL Lexer
- *
- * Run with:  java lexer.LexerTest
- *
- * Tests cover every token type and edge case:
- *   identifiers, keywords, integers, strings,
- *   operators, punctuation, comments, whitespace,
- *   and the sample program from the project spec.
- */
+// LexerTest.java — Unit tests for the RPAL Lexer
+// Run with: java lexer.LexerTest
+// Tests cover identifiers, keywords, integers, strings,
+// operators, punctuation, comments, whitespace, and the sample program.
 public class LexerTest {
 
     private static int passed = 0;
@@ -30,72 +24,73 @@ public class LexerTest {
         testSampleProgram();
 
         System.out.println("\n=== Results: " + passed + " passed, " + failed + " failed ===");
-        if (failed > 0) System.exit(1);
+        if (failed > 0)
+            System.exit(1);
     }
 
     // ── Test groups ───────────────────────────────────────────────────────────
 
     static void testIdentifiers() {
         section("Identifiers");
-        check("x",          1, TokenType.IDENTIFIER, "x");
-        check("myVar",      1, TokenType.IDENTIFIER, "myVar");
-        check("Psum",       1, TokenType.IDENTIFIER, "Psum");
-        check("x_1",        1, TokenType.IDENTIFIER, "x_1");
-        check("Order",      1, TokenType.IDENTIFIER, "Order");
-        check("Print",      1, TokenType.IDENTIFIER, "Print");
+        check("x", 1, TokenType.IDENTIFIER, "x");
+        check("myVar", 1, TokenType.IDENTIFIER, "myVar");
+        check("Psum", 1, TokenType.IDENTIFIER, "Psum");
+        check("x_1", 1, TokenType.IDENTIFIER, "x_1");
+        check("Order", 1, TokenType.IDENTIFIER, "Order");
+        check("Print", 1, TokenType.IDENTIFIER, "Print");
     }
 
     static void testKeywords() {
         section("Keywords");
         // Every RPAL keyword must be classified as KEYWORD, not IDENTIFIER
-        for (String kw : new String[]{
-            "let","in","fn","where","aug","rec","and","or","not",
-            "true","false","nil","dummy","within","eq","ne","ls","le","gr","ge"
+        for (String kw : new String[] {
+                "let", "in", "fn", "where", "aug", "rec", "and", "or", "not",
+                "true", "false", "nil", "dummy", "within", "eq", "ne", "ls", "le", "gr", "ge"
         }) {
             check(kw, 1, TokenType.KEYWORD, kw);
         }
         // 'letting' starts with a keyword prefix but is an identifier
-        check("letting",   1, TokenType.IDENTIFIER, "letting");
-        check("infix",     1, TokenType.IDENTIFIER, "infix");
-        check("notok",     1, TokenType.IDENTIFIER, "notok");
+        check("letting", 1, TokenType.IDENTIFIER, "letting");
+        check("infix", 1, TokenType.IDENTIFIER, "infix");
+        check("notok", 1, TokenType.IDENTIFIER, "notok");
     }
 
     static void testIntegers() {
         section("Integers");
-        check("0",          1, TokenType.INTEGER, "0");
-        check("42",         1, TokenType.INTEGER, "42");
-        check("12345",      1, TokenType.INTEGER, "12345");
+        check("0", 1, TokenType.INTEGER, "0");
+        check("42", 1, TokenType.INTEGER, "42");
+        check("12345", 1, TokenType.INTEGER, "12345");
     }
 
     static void testStrings() {
         section("Strings");
-        check("'hello'",         1, TokenType.STRING, "'hello'");
-        check("''",              1, TokenType.STRING, "''");
-        check("'hello world'",   1, TokenType.STRING, "'hello world'");
-        check("'it\\'s fine'",   1, TokenType.STRING, "'it\\'s fine'");
-        check("'tab\\there'",    1, TokenType.STRING, "'tab\\there'");
+        check("'hello'", 1, TokenType.STRING, "'hello'");
+        check("''", 1, TokenType.STRING, "''");
+        check("'hello world'", 1, TokenType.STRING, "'hello world'");
+        check("'it\\'s fine'", 1, TokenType.STRING, "'it\\'s fine'");
+        check("'tab\\there'", 1, TokenType.STRING, "'tab\\there'");
     }
 
     static void testOperators() {
         section("Operators");
-        check("+",   1, TokenType.OPERATOR, "+");
-        check("-",   1, TokenType.OPERATOR, "-");
-        check("*",   1, TokenType.OPERATOR, "*");
-        check("/",   1, TokenType.OPERATOR, "/");
-        check("**",  1, TokenType.OPERATOR, "**");
-        check("->",  1, TokenType.OPERATOR, "->");
-        check("=",   1, TokenType.OPERATOR, "=");
-        check("&",   1, TokenType.OPERATOR, "&");
-        check("@",   1, TokenType.OPERATOR, "@");
-        check("|",   1, TokenType.OPERATOR, "|");
+        check("+", 1, TokenType.OPERATOR, "+");
+        check("-", 1, TokenType.OPERATOR, "-");
+        check("*", 1, TokenType.OPERATOR, "*");
+        check("/", 1, TokenType.OPERATOR, "/");
+        check("**", 1, TokenType.OPERATOR, "**");
+        check("->", 1, TokenType.OPERATOR, "->");
+        check("=", 1, TokenType.OPERATOR, "=");
+        check("&", 1, TokenType.OPERATOR, "&");
+        check("@", 1, TokenType.OPERATOR, "@");
+        check("|", 1, TokenType.OPERATOR, "|");
     }
 
     static void testPunctuation() {
         section("Punctuation");
-        check("(",   1, TokenType.PUNCTUATION, "(");
-        check(")",   1, TokenType.PUNCTUATION, ")");
-        check(",",   1, TokenType.PUNCTUATION, ",");
-        check(";",   1, TokenType.PUNCTUATION, ";");
+        check("(", 1, TokenType.PUNCTUATION, "(");
+        check(")", 1, TokenType.PUNCTUATION, ")");
+        check(",", 1, TokenType.PUNCTUATION, ",");
+        check(";", 1, TokenType.PUNCTUATION, ";");
     }
 
     static void testComments() {
@@ -135,9 +130,9 @@ public class LexerTest {
         // x + 1
         List<Token> t1 = lex("x + 1");
         assertEqual("x+1: 4 tokens", 4, t1.size());
-        assertEqual("x+1: ID",  TokenType.IDENTIFIER, t1.get(0).type);
-        assertEqual("x+1: OP",  TokenType.OPERATOR,   t1.get(1).type);
-        assertEqual("x+1: INT", TokenType.INTEGER,     t1.get(2).type);
+        assertEqual("x+1: ID", TokenType.IDENTIFIER, t1.get(0).type);
+        assertEqual("x+1: OP", TokenType.OPERATOR, t1.get(1).type);
+        assertEqual("x+1: INT", TokenType.INTEGER, t1.get(2).type);
 
         // fn x . x + 1
         List<Token> t2 = lex("fn x . x + 1");
@@ -153,11 +148,10 @@ public class LexerTest {
     static void testSampleProgram() {
         section("Sample program (project spec)");
         // The exact program from the assignment spec
-        String prog =
-            "let Sum(A) = Psum (A,Order A )\n" +
-            "where rec Psum (T,N) = N eq 0 -> 0\n" +
-            "   | Psum(T,N-1)+T N\n" +
-            "in Print ( Sum (1,2,3,4,5) )";
+        String prog = "let Sum(A) = Psum (A,Order A )\n" +
+                "where rec Psum (T,N) = N eq 0 -> 0\n" +
+                "   | Psum(T,N-1)+T N\n" +
+                "in Print ( Sum (1,2,3,4,5) )";
 
         List<Token> tokens = lex(prog);
 
@@ -174,7 +168,8 @@ public class LexerTest {
 
         // No token should have type UNKNOWN / cause an exception
         for (Token t : tokens) {
-            if (t.isEOF()) break;
+            if (t.isEOF())
+                break;
             assertNotNull("spec: all types non-null", t.type);
         }
 
@@ -183,17 +178,17 @@ public class LexerTest {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /** Lex a single-token source and assert the first token matches. */
+    // Lex a single-token source and assert the first token matches.
     private static void check(String src, int expectedLine,
-                               TokenType expectedType, String expectedValue) {
+            TokenType expectedType, String expectedValue) {
         List<Token> tokens = lex(src);
         String label = "\"" + src + "\"";
-        assertEqual(label + " type",  expectedType,  tokens.get(0).type);
+        assertEqual(label + " type", expectedType, tokens.get(0).type);
         assertEqual(label + " value", expectedValue, tokens.get(0).value);
-        assertEqual(label + " line",  expectedLine,  tokens.get(0).line);
+        assertEqual(label + " line", expectedLine, tokens.get(0).line);
     }
 
-    /** Tokenize a raw source string (no file I/O). */
+    // Tokenize a raw source string (no file I/O).
     private static List<Token> lex(String src) {
         Lexer lexer = new Lexer(src, true);
         return lexer.tokenize();
@@ -209,7 +204,7 @@ public class LexerTest {
             passed++;
         } else {
             System.out.println("  FAIL  " + label
-                + "  expected=" + expected + "  got=" + actual);
+                    + "  expected=" + expected + "  got=" + actual);
             failed++;
         }
     }
